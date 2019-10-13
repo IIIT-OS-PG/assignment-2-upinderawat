@@ -13,7 +13,7 @@
 
 #include "readfiles.h"
 #include "user_handler.h"
-
+#include "group_handler.h"
 using namespace std;
 		// create_user <user_id> <passwod>
 		// login <user_id> <passwd>
@@ -37,7 +37,7 @@ void execute_cmd(const char* ip_port){
 	string passwd;
 	string ipv4;
 	string port;
-
+	int status;
 	auto v = split(string(ip_port),':');	
 	if(v.size() != 2){
 		cerr<<"Error in parsing ip and port number";
@@ -46,6 +46,7 @@ void execute_cmd(const char* ip_port){
 	ipv4 = v[0];//To Do:
 	port = v[1];//error handling needs to be done
 	user_t* user=nullptr;
+	struct group_t group;
 	while(1){
 		cout<<">";
 		cin>>cmd;
@@ -57,8 +58,11 @@ void execute_cmd(const char* ip_port){
 				continue;
 			}
 			user= new user_t(u_id, passwd, ipv4, port);
-			if(user->create_user() == SUCC){
+			if((status = user->create_user()) == SUCC){
 				cout<<"New u_id:"<<u_id<<" created\n";
+			}
+			else if(status == DIR_NULL){
+				cerr<<"Not able to create user_data dir";
 			}
 			else{
 				cerr<<"User with u_id: "<<u_id<<" already exists!!\n";
@@ -74,7 +78,7 @@ void execute_cmd(const char* ip_port){
 				continue;
 			}
 			user = new user_t(u_id, passwd, ipv4, port);
-			int status = user->login_user();
+			status = user->login_user();
 			switch(status){
 				case SUCC:
 					cout<<"User: "<<u_id<<" logged in\n";
@@ -91,14 +95,28 @@ void execute_cmd(const char* ip_port){
 					break;//To Do 
 					//promt for passwd again
 				case LOGON_FAILED:
-					cout<<"User: "<<u_id<<" such user exists!!\n";
+					cout<<"User: "<<u_id<<" No such user exists!!\n";
 					delete user;
 					user = nullptr;
 					break;
 			}
 		}
 		else if(cmd.compare("create_group")==0){
-			
+			cin>>g_id;
+			if(user == nullptr){
+				cerr<<"Login required\n";
+			}
+			else{
+				if((status = group.create_group(g_id, user->get_uid())) == SUCC){
+					cout<<"Group: "<<g_id<<" created\n";
+				}
+				else if(status == PRV_GRP){
+					cerr<<"Group: "<<g_id<<" already exists!!\n";
+				}
+				else if(status == DIR_NULL){
+					cerr<<"Group: "<<g_id<<" metadata still exists in group_data\n";
+				}
+			}
 		}
 		else if(cmd.compare("join_group")==0){
 			
@@ -125,9 +143,9 @@ void execute_cmd(const char* ip_port){
 			
 		}
 		else if(cmd.compare("logout")==0){
-			int status;
 			if(user != nullptr and (status = user->logout() != LOGON_FAILED)){
-				cout<<"Logged out \n";			}
+				cout<<"Logged out \n";
+			}
 			else{
 				cerr<<"Login required\n";
 			}

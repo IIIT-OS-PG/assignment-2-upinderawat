@@ -4,6 +4,7 @@
 #define INV_USR 3//invalid user
 #define PRV_LOG 4//already logged in
 
+#define DIR_NULL -1
 class user_t{
 	private:
 		//active implicitly => user exists
@@ -15,6 +16,9 @@ class user_t{
 	
 	public:
 	user_t(std::string, std::string, std::string, std::string);
+	bool get_status(){
+		return status;
+	}
 	std::string get_uid(){
 		return u_id;
 	}

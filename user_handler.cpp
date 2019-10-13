@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-
+#include <sys/stat.h>
 #include "user_handler.h"
 
 using namespace std;
@@ -12,11 +12,11 @@ user_t:: user_t(string u_id, string passwd, string ipv4, string port){
 	this->passwd = passwd;
 	this->ipv4 = ipv4;
 	this->port = port;
-	this->status = false;
+	this->status = false;//denotes current process is the one real user
 }
 
 bool user_t::user_exists(){
-	fstream fs("Metadata/Users/" +u_id, ios::in);
+	fstream fs("Metadata/Users/u_ids/" +u_id, ios::in);
 	if(fs.is_open()){
 		fs.close();
 		return true;
@@ -27,11 +27,17 @@ bool user_t::user_exists(){
 }
 int user_t::create_user(){
 	if(!user_exists()){
-		fstream ofs("Metadata/Users/" +u_id, ios::out | ios::trunc);
+		fstream ofs("Metadata/Users/u_ids/" +u_id, ios::out | ios::trunc);
 		ofs<<passwd<<"\n";
 		ofs<<0<<"\n";//active status
 		ofs<<ipv4<<"\n";
 		ofs<<port<<"\n";
+		ofs.close();
+		string pathname("Metadata/Users/user_data/"); 
+		pathname += u_id;
+		if(mkdir(pathname.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0){
+			return DIR_NULL;
+		}	
 		return SUCC;
 	}
 	else{
@@ -45,7 +51,7 @@ int user_t::login_user(){
 	// string active_port;
 
 	if(user_exists()){
-		fstream fs ("Metadata/Users/"+u_id);
+		fstream fs ("Metadata/Users/u_ids/"+u_id);
 		
 		//read correct values from user file
 		fs>>valid_passwd;
@@ -89,7 +95,7 @@ int user_t::logout(){
 	int active_status;
 
 	if(this->status){
-		ofstream ofs("Metadata/Users/"+u_id);
+		ofstream ofs("Metadata/Users/u_ids/"+u_id);
 		ofs<<this->passwd<<"\n";
 		ofs<<0<<"\n";	
 		ofs<<this->ipv4<<"\n";
