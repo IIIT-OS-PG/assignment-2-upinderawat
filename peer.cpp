@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include <algorithm>
 #include <cstring>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -31,14 +32,12 @@ using namespace std;
 
 void execute_cmd(int clientSocket, const char* ip_port){
 	string cmd;
-	void* return_msg;
 	string g_id;
 	string u_id;
 	string passwd;
 	string ipv4;
 	string port;
-	return_msg = malloc(CMD_SIZE);
-	int status;
+	char* return_msg= new char[CMD_SIZE];
 	auto v = split(string(ip_port),':');	
 	if(v.size() != 2){
 		cerr<<"Error in parsing ip and port number";
@@ -50,182 +49,13 @@ void execute_cmd(int clientSocket, const char* ip_port){
 	while(1){
 		cout<<">";
 		getline(cin, cmd );
+		if(std::all_of(cmd.cbegin(),cmd.cend(),[](char c) { return std::isspace(c); }))	continue;
+
 		write(clientSocket, cmd.c_str(), cmd.size());
 		if((num_bytes = read(clientSocket, return_msg, CMD_SIZE))>0){
-			fprintf(stdout, "%s\n", (char*)return_msg);
+			fprintf(stdout, "%s", (char*)return_msg);
 		}
 		memset(return_msg, '\0', CMD_SIZE);
-		/*
-		if(cmd.compare("create_user")==0){
-			cin>>u_id>>passwd;
-			if(user != nullptr){
-				cerr<<"Not permitted in Login state\nLogout first or start process from different shell\n";
-
-				continue;
-			}
-			user= new user_t(u_id, passwd, ipv4, port);
-			if((status = user->create_user()) == SUCC){
-				cout<<"New u_id:"<<u_id<<" created\n";
-			}
-			else if(status == DIR_NULL){
-				cerr<<"Not able to create user_data dir\n";
-			}
-			else{
-				cerr<<"User with u_id: "<<u_id<<" already exists!!\n";
-			}
-			delete user;
-			user = nullptr;
-		}
-		else if(cmd.compare("login")==0){
-			cin>>u_id>>passwd;
-			if(user != nullptr){
-				cerr<<"User logged in from different account\n";
-				cerr<<"Logout first or start process from different shell\n";
-				continue;
-			}
-			user = new user_t(u_id, passwd, ipv4, port);
-			status = user->login_user();
-			switch(status){
-				case SUCC:
-					cout<<"User: "<<u_id<<" logged in\n";
-					break;
-				case PRV_LOG:
-					cout<<"User: "<<u_id<<" already logged in. You spy process >:#\n";
-					delete user;
-					user = nullptr;
-					break;
-				case INC_PSSWD:
-					cout<<"Invalid Password\n";
-					delete user;
-					user = nullptr;
-					break;//To Do 
-					//promt for passwd again
-				case LOGON_FAILED:
-					cout<<"User: "<<u_id<<" No such user exists!!\n";
-					delete user;
-					user = nullptr;
-					break;
-			}
-		}
-		else if(cmd.compare("create_group")==0){
-			cin>>g_id;
-			if(user == nullptr){
-				cerr<<"Login required\n";
-			}
-			else{
-				if((status = group.create_group(g_id, user->get_uid())) == SUCC){
-					cout<<"Group: "<<g_id<<" created\n";
-				}
-				else if(status == PRV_GRP){
-					cerr<<"Group: "<<g_id<<" already exists!!\n";
-				}
-				else if(status == DIR_NULL){
-					cerr<<"Group: "<<g_id<<" metadata still exists in group_data\n";
-				}
-			}
-		}
-		else if(cmd.compare("join_group")==0){
-			cin>>g_id;
-			if(user == nullptr){
-				cerr<<"Login required\n";
-			}
-			else{
-				if((status=group.join_group(g_id, user->get_uid())) == SUCC){
-					cout<<"Group join request sent to admin\n";
-				}
-				else if(status == INV_GRP){
-					cerr<<"Invalid group request\n";
-				}
-				else if(status == DUP_REQ){
-					cerr<<"Duplicate group request\n";					
-				}
-				else if(status == USR_EXISTS){
-					cerr<<"User: "<<u_id<<" already member\n";
-				}
-			}
-		}
-		else if(cmd.compare("leave_group")==0){
-			
-		}
-		else if(cmd.compare("list_requests")==0){
-			cin>>g_id;
-			if(user == nullptr){
-				cerr<<"Login required\n";
-			}
-			else{
-				if((status = group.list_requests(g_id, user->get_uid())) == SUCC){
-				}
-				else if(status == PER_DEN){
-					cerr<<"User "<<user->get_uid()<<": insufficient privelleges\n";
-				}
-				else if(status == INV_GRP){
-					cerr<<"Group "<<g_id<<": doesn't exist!!\n";					
-				}
-			}
-		}
-		else if(cmd.compare("accept_request")==0){
-			cin>>g_id>>u_id;
-			if(user == nullptr){
-				cerr<<"Login required\n";
-			}
-			else{
-				if((status = group.accept_request(g_id, user->get_uid(), u_id)) == SUCC){
-					cout<<"Group "<<g_id<<": "<<"added "<<u_id<<"\n";
-				}
-				else if(status == INV_GRP){
-					cerr<<"Group "<<g_id<<": doesn't exist!!\n";
-				}
-				else if(status == PER_DEN){
-					cerr<<"User "<<user->get_uid()<<": insufficient privelleges\n";
-				}
-				else if(status == INV_USR){
-					cerr<<"No request from"<<u_id<<"\n";
-				}
-			}
-		}
-		else if(cmd.compare("list_groups")==0){
-			std::vector<std::string> v;
-			if(user == nullptr){
-				cerr<<"Login required\n";
-			}
-			else{
-				v = group.list_groups();
-				if(v.empty()){
-					cout<<"No group Exists!!\n";
-				}
-				else{
-					for(auto a: v){
-						cout<<a<<"\n";
-					}
-				}
-			}
-		}
-		else if(cmd.compare("list_files")==0){
-			
-		}
-		else if(cmd.compare("upload_file")==0){
-			
-		}
-		else if(cmd.compare("download_file")==0){
-			
-		}
-		else if(cmd.compare("logout")==0){
-			if(user != nullptr and (status = user->logout() != LOGON_FAILED)){
-				cout<<"Logged out \n";
-			}
-			else{
-				cerr<<"Login required\n";
-			}
-			delete user;
-			user = nullptr;
-		}
-		else if(cmd.compare("stop_share")==0){
-			
-		}
-		else{
-			cerr<<"Incorrect cmd\n";
-		}
-	*/
 	}
 }
 

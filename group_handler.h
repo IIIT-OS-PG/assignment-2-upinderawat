@@ -5,6 +5,7 @@
 #define INV_GRP 4
 #define PER_DEN 5
 #define DUP_REQ 6
+#include <utility>  
 #include <vector>
 
 #define DIR_NULL -1
@@ -24,7 +25,7 @@ struct group_t{
 	std::vector<std::string> list_groups();
 	int join_group(const std::string& , const std::string& );
 	int accept_request(const std::string&, const std::string &, const std::string&);
-	int list_requests(const std::string& , const std::string& );
+	std::pair<int, std::vector<std::string>> list_requests(const std::string& , const std::string& );
 
 };
 

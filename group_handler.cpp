@@ -7,7 +7,6 @@
 #include "group_handler.h"
 #include <dirent.h>
 
-#include <vector>
 using namespace std;
 
 //To Do:
@@ -160,23 +159,24 @@ int group_t:: accept_request(const std::string& g_id, const std::string& admin_u
 }
 //To Do
 //empty file check
-int group_t :: list_requests(const std::string& g_id, const std::string& target_uid){
+std::pair<int, std::vector<std::string>> group_t :: list_requests(const std::string& g_id, const std::string& target_uid){
 	string u_id;
+	std::vector<std::string> v;
 	if(group_exists(g_id)){
 		if(is_admin(g_id, target_uid)){
 			ifstream ifs("Metadata/Groups/g_ids_requests/"+g_id);
 			while(!ifs.eof()){
 				getline(ifs,u_id);
-				cout<<u_id<<"\n";
+				v.push_back(u_id);
 			}
 			ifs.close();
-			return SUCC;
+			return {SUCC, v};
 		}
 		else{
-			return PER_DEN;
+			return {PER_DEN, v};
 		}
 	}	
 	else{
-		return INV_GRP;
+		return {INV_GRP, v};
 	}
 }

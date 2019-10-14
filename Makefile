@@ -1,4 +1,4 @@
-CC=g++
+CC=g++ -std=c++11
 FLAG_T= -pthread -Wall
 FLAG_P= -Wall
 FLAG_GDB = -g
@@ -11,7 +11,7 @@ peer_gdb: readfiles.o
 tracker: readfiles.o user_handler.o group_handler.o
 	$(CC) $(FLAG_T) -o tracker.o tracker.cpp readfiles.o user_handler.o group_handler.o
 
-tracker_gdb: readfiles.o
+tracker_gdb: readfiles.o user_handler.o group_handler.o
 	$(CC) $(FLAG_T) $(FLAG_GDB) -o tracker.o tracker.cpp readfiles.o user_handler.o group_handler.o
 
 
@@ -22,8 +22,8 @@ readfiles.o: readfiles.h
 
 clean:
 	rm *.o
-# 	rm Metadata/Users/u_ids/*
-# 	rm Metadata/Users/user_data/* -rf
-# 	rm Metadata/Groups/g_ids/*
-# 	rm Metadata/Groups/group_data/* -rf
-# 	rm Metadata/Groups/g_ids_requests/*
+	rm Metadata/Users/u_ids/*
+	rm Metadata/Users/user_data/* -rf
+	rm Metadata/Groups/g_ids/*
+	rm Metadata/Groups/group_data/* -rf
+	rm Metadata/Groups/g_ids_requests/*

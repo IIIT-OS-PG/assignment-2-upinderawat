@@ -18,12 +18,15 @@ vector<string> split(const string& s, char delimiter){
 
 int read_ipv4_port(string filename, int tracker_no, string& ip, string& port){
 	int tracker;
+	string port_temp;
+	string ip_temp;
 	ifstream ifs(filename);
 	if(ifs.is_open()){
 		while(!ifs.eof()){
-			ifs>>tracker>>ip>>port;
+			ifs>>tracker>>ip_temp>>port_temp;
 			if(tracker_no == tracker){
-				break;
+				ip = ip_temp;
+				port = port_temp;
 			}
 		}
 	}
