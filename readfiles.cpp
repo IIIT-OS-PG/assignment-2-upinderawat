@@ -16,7 +16,6 @@ vector<string> split(const string& s, char delimiter){
 	return tokens;
 }
 
-
 int read_ipv4_port(string filename, int tracker_no, string& ip, string& port){
 	int tracker;
 	ifstream ifs(filename);

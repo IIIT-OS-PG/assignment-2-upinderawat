@@ -12,8 +12,8 @@
 #include <fcntl.h>
 
 #include "readfiles.h"
-#include "user_handler.h"
-#include "group_handler.h"
+#define CMD_SIZE 512
+
 using namespace std;
 		// #create_user <user_id> <passwod>
 		// #login <user_id> <passwd>
@@ -29,14 +29,15 @@ using namespace std;
 		// #logout
 		// stop share <group_id> <file_name>
 
-void execute_cmd(const char* ip_port){
+void execute_cmd(int clientSocket, const char* ip_port){
 	string cmd;
+	void* return_msg;
 	string g_id;
 	string u_id;
-	string file_path;
 	string passwd;
 	string ipv4;
 	string port;
+	return_msg = malloc(CMD_SIZE);
 	int status;
 	auto v = split(string(ip_port),':');	
 	if(v.size() != 2){
@@ -45,11 +46,16 @@ void execute_cmd(const char* ip_port){
 	}
 	ipv4 = v[0];//To Do:
 	port = v[1];//error handling needs to be done
-	user_t* user=nullptr;
-	struct group_t group;
+	int num_bytes;
 	while(1){
 		cout<<">";
-		cin>>cmd;
+		getline(cin, cmd );
+		write(clientSocket, cmd.c_str(), cmd.size());
+		if((num_bytes = read(clientSocket, return_msg, CMD_SIZE))>0){
+			fprintf(stdout, "%s\n", (char*)return_msg);
+		}
+		memset(return_msg, '\0', CMD_SIZE);
+		/*
 		if(cmd.compare("create_user")==0){
 			cin>>u_id>>passwd;
 			if(user != nullptr){
@@ -219,6 +225,7 @@ void execute_cmd(const char* ip_port){
 		else{
 			cerr<<"Incorrect cmd\n";
 		}
+	*/
 	}
 }
 
@@ -272,7 +279,7 @@ int main(int argc, char const *argv[]){
 	}
 	ip_port = argv[1];
 	write(clientSocket, ip_port, strlen(ip_port));
-	execute_cmd(ip_port);
+	execute_cmd(clientSocket, ip_port);
 	close(clientSocket);
 	return 0;
 }

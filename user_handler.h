@@ -33,4 +33,3 @@ class user_t{
 	int login_user();
 	int logout();
 };
-

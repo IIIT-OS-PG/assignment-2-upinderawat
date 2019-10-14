@@ -1,6 +1,7 @@
 #include <iostream>
-#include <cstring>
+#include <string>
 
+#include <cstring>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -10,11 +11,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include "readfiles.h"
 
-#define CHUNK_SIZE 512
-#define IP_ADDR_LEN 20
+#include "readfiles.h"
+#include "user_handler.h"
+#include "group_handler.h"
+
+#define CMD_SIZE 512
 #define MAX_INC_CONN 5
+
 typedef struct{
 	int sockfd;
 	struct sockaddr_in sock_addr;
@@ -24,14 +28,65 @@ typedef struct{
 void * process_req(void* arg){
 	connection_t* connection;
 	int num_bytes;
-	void* buff;
-	buff = malloc(CHUNK_SIZE);
+	void* cmd;
+	cmd = malloc(CMD_SIZE);
 	
 	if(!arg) pthread_exit(0);
-	
+
+	string g_id;
+	string u_id;
+	string passwd;
+	char* ipv4_port;
+	string ipv4;
+	string port;
+	string cmd_s;
+	string return_msg;
+	int status;
+
+	user_t* user=nullptr;
 	connection = (connection_t*)arg;
-	while((num_bytes = read(connection->sockfd, buff, CHUNK_SIZE))>0){
-		fprintf(stdout, "%s\n",(char*)buff);
+	ipv4_port = (char*)malloc(CMD_SIZE);
+
+	//read ip and port sent from client
+	if(read(connection->sockfd, ipv4_port, CMD_SIZE) <= 0){
+		cerr<<"Unresponsive peer\n";
+	}
+	else{
+		auto v = split(string(ipv4_port),':');//To Do error handling
+		ipv4 = v[0];
+		port = v[1];
+		
+		while((num_bytes = read(connection->sockfd, cmd, CMD_SIZE))>0){
+			// fprintf(stdout, "%s\n",(char*)cmd);
+			cmd_s = (char*)cmd;
+			auto args = split(cmd_s, ' ');
+			if(args.size() <= 0){
+				continue;
+			}
+			if(args[0].compare("create_user")==0){
+				u_id = args[1];
+				passwd = args[2];
+				if(user != nullptr){
+					return_msg = "Not permitted in Login state\nLogout first or start process from different shell\n";
+				}
+				else{	
+					user= new user_t(u_id, passwd, ipv4, port);
+					if((status = user->create_user()) == SUCC){
+						return_msg = "New u_id:" + u_id + " created\n";
+					}
+					else if(status == DIR_NULL){
+						return_msg = "Not able to create user_data dir\n";
+					}
+					else{
+						return_msg = "User with u_id: " + u_id + " already exists!!\n";
+					}
+					delete user;
+					user = nullptr;
+				}
+			}
+			write(connection->sockfd, return_msg.c_str(), return_msg.size());
+			memset(cmd, '\0', CMD_SIZE);
+		}
 	}
 	close(connection->sockfd);
 	free(connection);
