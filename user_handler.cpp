@@ -14,7 +14,7 @@ user_t:: user_t(string u_id, string passwd, string ipv4, string port){
 	this->port = port;
 	this->status = false;//denotes current process is the one real user
 }
-
+//if user obj is 
 bool user_t::user_exists(){
 	fstream fs("Metadata/Users/u_ids/" +u_id, ios::in);
 	if(fs.is_open()){

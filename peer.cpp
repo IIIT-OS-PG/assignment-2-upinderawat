@@ -15,18 +15,18 @@
 #include "user_handler.h"
 #include "group_handler.h"
 using namespace std;
-		// create_user <user_id> <passwod>
-		// login <user_id> <passwd>
-		// create_group <group_id>
-		// join_group <group_id>
+		// #create_user <user_id> <passwod>
+		// #login <user_id> <passwd>
+		// #create_group <group_id>
+		// #join_group <group_id>
 		// leave_group <group_id>
-		// list_requests <group_id>
-		// accept_request <group_id> <user_id>
-		// list_groups
+		// #list_requests <group_id>
+		// #accept_request <group_id> <user_id>
+		// #list_groups
 		// list_files <group_id>
 		// upload_file <file_path> <group_id>
 		// download_file <group_id> <file_name> <destination_path>
-		// logout
+		// #logout
 		// stop share <group_id> <file_name>
 
 void execute_cmd(const char* ip_port){
@@ -54,7 +54,7 @@ void execute_cmd(const char* ip_port){
 			cin>>u_id>>passwd;
 			if(user != nullptr){
 				cerr<<"Not permitted in Login state\nLogout first or start process from different shell\n";
-				
+
 				continue;
 			}
 			user= new user_t(u_id, passwd, ipv4, port);
@@ -62,7 +62,7 @@ void execute_cmd(const char* ip_port){
 				cout<<"New u_id:"<<u_id<<" created\n";
 			}
 			else if(status == DIR_NULL){
-				cerr<<"Not able to create user_data dir";
+				cerr<<"Not able to create user_data dir\n";
 			}
 			else{
 				cerr<<"User with u_id: "<<u_id<<" already exists!!\n";
@@ -119,19 +119,80 @@ void execute_cmd(const char* ip_port){
 			}
 		}
 		else if(cmd.compare("join_group")==0){
-			
+			cin>>g_id;
+			if(user == nullptr){
+				cerr<<"Login required\n";
+			}
+			else{
+				if((status=group.join_group(g_id, user->get_uid())) == SUCC){
+					cout<<"Group join request sent to admin\n";
+				}
+				else if(status == INV_GRP){
+					cerr<<"Invalid group request\n";
+				}
+				else if(status == DUP_REQ){
+					cerr<<"Duplicate group request\n";					
+				}
+				else if(status == USR_EXISTS){
+					cerr<<"User: "<<u_id<<" already member\n";
+				}
+			}
 		}
 		else if(cmd.compare("leave_group")==0){
 			
 		}
 		else if(cmd.compare("list_requests")==0){
-			
+			cin>>g_id;
+			if(user == nullptr){
+				cerr<<"Login required\n";
+			}
+			else{
+				if((status = group.list_requests(g_id, user->get_uid())) == SUCC){
+				}
+				else if(status == PER_DEN){
+					cerr<<"User "<<user->get_uid()<<": insufficient privelleges\n";
+				}
+				else if(status == INV_GRP){
+					cerr<<"Group "<<g_id<<": doesn't exist!!\n";					
+				}
+			}
 		}
 		else if(cmd.compare("accept_request")==0){
-			
+			cin>>g_id>>u_id;
+			if(user == nullptr){
+				cerr<<"Login required\n";
+			}
+			else{
+				if((status = group.accept_request(g_id, user->get_uid(), u_id)) == SUCC){
+					cout<<"Group "<<g_id<<": "<<"added "<<u_id<<"\n";
+				}
+				else if(status == INV_GRP){
+					cerr<<"Group "<<g_id<<": doesn't exist!!\n";
+				}
+				else if(status == PER_DEN){
+					cerr<<"User "<<user->get_uid()<<": insufficient privelleges\n";
+				}
+				else if(status == INV_USR){
+					cerr<<"No request from"<<u_id<<"\n";
+				}
+			}
 		}
 		else if(cmd.compare("list_groups")==0){
-			
+			std::vector<std::string> v;
+			if(user == nullptr){
+				cerr<<"Login required\n";
+			}
+			else{
+				v = group.list_groups();
+				if(v.empty()){
+					cout<<"No group Exists!!\n";
+				}
+				else{
+					for(auto a: v){
+						cout<<a<<"\n";
+					}
+				}
+			}
 		}
 		else if(cmd.compare("list_files")==0){
 			
@@ -155,7 +216,9 @@ void execute_cmd(const char* ip_port){
 		else if(cmd.compare("stop_share")==0){
 			
 		}
-		
+		else{
+			cerr<<"Incorrect cmd\n";
+		}
 	}
 }
 
